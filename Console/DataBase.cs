@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Configuration;
 using System.Data.SqlClient;
+using System.Data;
 
 namespace DataCompany
 {
@@ -12,7 +13,8 @@ namespace DataCompany
     class DataBase
     {
         static SqlConnection sqlConnection = new SqlConnection(ConfigurationManager.AppSettings["ConnectionString"]);
-
+        static Int32 LastIdResult;
+        static int Id_ids;
 
         public static void openConnection()
         {
@@ -37,7 +39,7 @@ namespace DataCompany
             return sqlConnection;
         }
 
-        public static int ReturnId(string tableName)
+     /*   public static int ReturnId(string tableName)
         {
             string query = "EXEC LastID @tableName";
 
@@ -52,16 +54,14 @@ namespace DataCompany
                 return res;
 
             }
-        }
+        }*/
         public static void InsertResult(DataResult dataResults)
         {
 
-            string insertQuery = "EXEC InsertResult @remarks, @name, @type, @entity_number, @source, @source_information_url," +
-                                   "@source_list_url, @call_sign, @end_date, @federal_register_notice, @gross_registered_tonnage, @gross_tonnage, @license_policy, @license_requirement," +
-                                   "@standard_order, @start_date, @title, @vessel_flag, @vessel_owner, @vessel_type, @id";
-
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertResult", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
+
                 command.Parameters.Clear();
                 command.Parameters.AddWithValue("@remarks", dataResults.remarks);
                 command.Parameters.AddWithValue("@name", dataResults.name);
@@ -90,27 +90,28 @@ namespace DataCompany
                 {
                     if ((command.Parameters[g].Value is null) || (command.Parameters[g].Value.ToString() == "")) command.Parameters[g].Value = DBNull.Value;
                 }
+                SqlParameter idResultParam = new SqlParameter("@id_result", SqlDbType.Int);
+                idResultParam.Direction = ParameterDirection.Output;
+                command.Parameters.Add(idResultParam);
 
                 command.ExecuteNonQuery();
+               LastIdResult = (Int32)command.Parameters["@id_result"].Value;
+               
 
             }
 
         }
         public static void InsertIdsList(DataResult dataResults)
         {
-            string insertQuery = "EXEC  InsertIDS  @type, @number, @country";
-            string insertQuerylist;
-            string selectQuery = "EXEC SelectIdenticalIds @type, @number";
-
-            using (SqlCommand command = new SqlCommand(selectQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("SelectIdenticalIds", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.ids)
                 {
-                    command.CommandText = selectQuery;
+                    command.CommandText = "SelectIdenticalIds";
                     command.Parameters.Clear();
                     command.Parameters.AddWithValue("@type", data.type);
                     command.Parameters.AddWithValue("@number", data.number);
-                    command.Parameters.AddWithValue("@country", data.country);
                     for (int g = 0; g < command.Parameters.Count; g++)
                     {
                         if ((command.Parameters[g].Value is null) || (command.Parameters[g].Value.ToString() == "")) command.Parameters[g].Value = DBNull.Value;
@@ -119,15 +120,22 @@ namespace DataCompany
 
                     if (result == null)
                     {
-                        command.CommandText = insertQuery;
-                        command.ExecuteNonQuery();
+                        if ((data.country is null)||(data.country.ToString()=="")) command.Parameters.AddWithValue("@country", DBNull.Value);
+                        else command.Parameters.AddWithValue("@country", data.country);
+                        command.CommandText = "InsertIDS";
+                        SqlParameter idResultParam = new SqlParameter("@id_ids", SqlDbType.Int);
+                        idResultParam.Direction = ParameterDirection.Output;
+                        command.Parameters.Add(idResultParam);
 
-                        insertQuerylist = "EXEC InsertList  @id_ids, @id_result";
-                        using (SqlCommand command1 = new SqlCommand(insertQuerylist, DataBase.GetConnection()))
+                        command.ExecuteNonQuery();
+                        Id_ids = (Int32)command.Parameters["@id_ids"].Value;
+
+                        using (SqlCommand command1 = new SqlCommand("InsertList", DataBase.GetConnection()))
                         {
+                            command1.CommandType = System.Data.CommandType.StoredProcedure;
                             command1.Parameters.Clear();
-                            command1.Parameters.AddWithValue("@id_ids", DataBase.ReturnId("ids"));
-                            command1.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                            command1.Parameters.AddWithValue("@id_ids", Id_ids);
+                            command1.Parameters.AddWithValue("@id_result", LastIdResult);
                             command1.ExecuteNonQuery();
                         }
                     }
@@ -138,12 +146,12 @@ namespace DataCompany
                         dataReader1.Read();
                         id_for_list = Convert.ToInt32(dataReader1["id_ids"]);
                         dataReader1.Close();
-                        insertQuerylist = "EXEC InsertList  @id_ids, @id_result";
-                        using (SqlCommand command1 = new SqlCommand(insertQuerylist, DataBase.GetConnection()))
+                        using (SqlCommand command1 = new SqlCommand("InsertList", DataBase.GetConnection()))
                         {
+                            command1.CommandType = System.Data.CommandType.StoredProcedure;
                             command1.Parameters.Clear();
                             command1.Parameters.AddWithValue("@id_ids", id_for_list);
-                            command1.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                            command1.Parameters.AddWithValue("@id_result", LastIdResult);
                             command1.ExecuteNonQuery();
                         }
                     }
@@ -152,13 +160,13 @@ namespace DataCompany
         }
         public static void InsertAdress(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertAddress @id_result, @address, @city, @state, @postal_code, @country";
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertAddress", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.addresses)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@address", data.address);
                     command.Parameters.AddWithValue("@city", data.city);
                     command.Parameters.AddWithValue("@state", data.state);
@@ -174,14 +182,14 @@ namespace DataCompany
         }
         public static void InsertAlt_name(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertAlt_names @id_result, @alt_name";
 
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertAlt_names", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.alt_names)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@alt_name", data);
                     command.ExecuteNonQuery();
                 }
@@ -189,14 +197,14 @@ namespace DataCompany
         }
         public static void InsertProgram(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertProgram @id_result, @program";
 
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertProgram", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.programs)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@program", data);
                     command.ExecuteNonQuery();
                 }
@@ -204,14 +212,14 @@ namespace DataCompany
         }
         public static void InsertDates_of_birth(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertDate_of_birth @id_result, @date_of_birth";
 
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertDate_of_birth", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.dates_of_birth)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@date_of_birth", data);
                     command.ExecuteNonQuery();
                 }
@@ -219,14 +227,13 @@ namespace DataCompany
         }
         public static void InsertPlaces_of_birth(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertPlaces_of_birth @id_result, @place_of_birth";
-
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertPlaces_of_birth", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.places_of_birth)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@place_of_birth", data);
                     command.ExecuteNonQuery();
                 }
@@ -234,21 +241,19 @@ namespace DataCompany
         }
         public static void InsertNationalities(DataResult dataResults)
         {
-            string insertQuery = "EXEC InsertNationalities @id_result, @nationality";
 
-            using (SqlCommand command = new SqlCommand(insertQuery, DataBase.GetConnection()))
+            using (SqlCommand command = new SqlCommand("InsertNationalities", DataBase.GetConnection()))
             {
+                command.CommandType = System.Data.CommandType.StoredProcedure;
                 foreach (var data in dataResults.nationalities)
                 {
                     command.Parameters.Clear();
-                    command.Parameters.AddWithValue("@id_result", DataBase.ReturnId("results"));
+                    command.Parameters.AddWithValue("@id_result", LastIdResult);
                     command.Parameters.AddWithValue("@nationality", data);
                     command.ExecuteNonQuery();
                 }
             }
         }
-
-
 
     }
 }
