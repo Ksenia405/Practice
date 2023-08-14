@@ -37,7 +37,7 @@ namespace DataCompany
         public void DeleteLastData();
     }
 
-    class WorkWihtData: ISort_dates_of_birth, ISort_Address, ISort_Dates, ISort_ids, ISort_program, ISort_license, ILastData
+    public class WorkWihtData: ISort_dates_of_birth, ISort_Address, ISort_Dates, ISort_ids, ISort_program, ISort_license, ILastData
     {
 
         public  void Sort_dates_of_birth() {

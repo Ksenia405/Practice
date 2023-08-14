@@ -11,7 +11,6 @@ namespace DataCompany
 {
     class Program
     {
-
         public static async Task Main()
         {
             WorkWihtData fun = new WorkWihtData();
@@ -30,22 +29,19 @@ namespace DataCompany
                   List<DataResult> dataResults = wrapper.results;
                     DataBase.openConnection();
                     fun.DeleteLastData();
-                    using (SqlCommand command = new SqlCommand("DeleteAllData", DataBase.GetConnection()))
-                    {
-                        command.CommandType = System.Data.CommandType.StoredProcedure;
-                        command.ExecuteNonQuery();
-                    }
+                    DataBase.DeleteData();
                     for (int i = 0; i < dataResults.Count; i++)
                          // for(int i=0; i<5000; i++)
                           {
-                              DataBase.InsertResult(dataResults[i]);
-                              if (dataResults[i].ids != null)  DataBase.InsertIdsList(dataResults[i]);
-                              if (dataResults[i].addresses != null)  DataBase.InsertAdress(dataResults[i]);
-                              if (dataResults[i].alt_names != null) DataBase.InsertAlt_name(dataResults[i]);
-                              if (dataResults[i].programs != null) DataBase.InsertProgram(dataResults[i]);
-                              if (dataResults[i].dates_of_birth != null) DataBase.InsertDates_of_birth(dataResults[i]);
-                              if (dataResults[i].places_of_birth != null) DataBase.InsertPlaces_of_birth(dataResults[i]);
-                              if (dataResults[i].nationalities != null) DataBase.InsertNationalities(dataResults[i]);
+                              var id_res=DataBase.InsertResult(dataResults[i]);
+
+                              if (dataResults[i].ids != null)  DataBase.InsertIdsList(dataResults[i], id_res);
+                              if (dataResults[i].addresses != null)  DataBase.InsertAdress(dataResults[i], id_res);
+                              if (dataResults[i].alt_names != null) DataBase.InsertAlt_name(dataResults[i], id_res);
+                              if (dataResults[i].programs != null) DataBase.InsertProgram(dataResults[i], id_res);
+                              if (dataResults[i].dates_of_birth != null) DataBase.InsertDates_of_birth(dataResults[i], id_res);
+                              if (dataResults[i].places_of_birth != null) DataBase.InsertPlaces_of_birth(dataResults[i], id_res);
+                              if (dataResults[i].nationalities != null) DataBase.InsertNationalities(dataResults[i], id_res);
                           }
 
                           
