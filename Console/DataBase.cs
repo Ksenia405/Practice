@@ -248,19 +248,21 @@ namespace DataCompany
         }
         public static List<DataResult> SelectAll()
         {
-            return SelectData("SelectAll");  
+            return SelectData("SELECT * FROM dbo.GetAll()");
+            
         }
-
-        public static List<DataResult> SelectAdres()
+        public static List<DataResult> SelectAddres()
         {
-            return SelectData("Select_for_swagger_address");
+            return SelectData("SELECT * FROM dbo.GetAddress()");   
         }
 
         public static DataResult SelectResult(string id)
         {
-            using (SqlCommand command = new SqlCommand("SelectResultID", DataBase.GetConnection()))
+            string sqlQuery = "SELECT * FROM dbo.GetResultsForId(@id)";
+
+            using (SqlCommand command = new SqlCommand(sqlQuery, DataBase.GetConnection()))
             {
-                command.CommandType = System.Data.CommandType.StoredProcedure;
+                //command.CommandType = System.Data.CommandType.StoredProcedure;
                 command.Parameters.AddWithValue("@id", id);
                 SqlDataReader dataReader = command.ExecuteReader();
                 DataResult page1 = new DataResult();
@@ -349,18 +351,32 @@ namespace DataCompany
             }
         }
         public static List<DataResult> SelectEndDate() {
-            return SelectData("SelectEndD");
+            return SelectData("SELECT * FROM dbo.GetEndD()");     
         }
         public static List<DataResult> SelectLicense()
         {
-            return SelectData("SelectLicense");
+            return SelectData("SELECT * FROM dbo.GetLicense()");
+            
         }
-
+        public static List<DataResult> SelectBirth()
+        {
+            return SelectData("SELECT * FROM dbo.GetDatesOfB()");
+        }
+        public static List<DataResult> SelectProgram()
+        {
+            return SelectData("SELECT * FROM dbo.GetProgram()");
+            
+        }
+        public static List<DataResult> SelectIDS()
+        {
+            return SelectData("SELECT * FROM dbo.GetIDS()");
+            
+        }
         public static List<DataResult> SelectData(string com)
         {
             using (SqlCommand command = new SqlCommand(com, DataBase.GetConnection()))
             {
-                command.CommandType = System.Data.CommandType.StoredProcedure;
+                //command.CommandType = System.Data.CommandType.StoredProcedure;
                 SqlDataReader dataReader = command.ExecuteReader();
                 Dictionary<string, DataResult> resultDict = new Dictionary<string, DataResult>();
                 while (dataReader.Read())

@@ -1,0 +1,10 @@
+*.log
+Thumbs.db
+*.suo
+*.user
+
+Debug/
+Release/
+bin/
+obj/
+log/

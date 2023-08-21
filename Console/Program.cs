@@ -25,10 +25,16 @@ namespace DataCompany
                 if (response.IsSuccessStatusCode)
                 {
                     string jsonString = await response.Content.ReadAsStringAsync();
-                    DataResultWrapper wrapper = JsonConvert.DeserializeObject<DataResultWrapper>(jsonString);
+                    WorkWihtData d = new WorkWihtData();
+                   DataResultWrapper wrapper = JsonConvert.DeserializeObject<DataResultWrapper>(jsonString);
                   List<DataResult> dataResults = wrapper.results;
                     DataBase.openConnection();
-                    fun.DeleteLastData();
+                    d.DeleteLastData("Delete_XDate_Birth");
+                    d.DeleteLastData("Delete_XAddress");
+                    d.DeleteLastData("Delete_XDate");
+                    d.DeleteLastData("Delete_XIDS");
+                    d.DeleteLastData("Delete_XProg");
+                    d.DeleteLastData("Delete_XLisence");
                     DataBase.DeleteData();
                     for (int i = 0; i < dataResults.Count; i++)
                          // for(int i=0; i<5000; i++)

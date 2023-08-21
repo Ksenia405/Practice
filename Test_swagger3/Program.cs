@@ -13,9 +13,7 @@ namespace Test_swagger3
     {
         public static void Main(string[] args)
         {
-            WorkWihtData a = new WorkWihtData();
             DataBase.openConnection();
-            a.DeleteLastData();
             CreateHostBuilder(args).Build().Run();
         }
 
